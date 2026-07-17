@@ -1,33 +1,18 @@
-// Абстракция: мы скрываем сложность (как именно дышит человек)
-// и показываем только важное (имя и возможность говорить).
 class Person {
   constructor (name, hp) {
     this.name = name
     this.hp = hp
-    this._energy = 100 // # - соглашение, что поле приватное
   } 
-
-  // Геттер для приватного поля (Инкапсуляция)
-  get energy () {
-    return this._energy
-  }
-
-  // Сеттер с проверкой (Инкапсуляция)
-  set energy (value) {
-    if (value < 0) this._energy = 0
-    else if (value > 100) this._energy = 100
-    else this._energy = value
-  }
-
 }
 
-// Наследование (extends)
 class Botanist extends Person {
-  constructor (name, hp, helmet, pads, bron) {
+  constructor (name, hp, helmet, pads, bron, pants, shoes) {
     super(name, hp)
     this._helmet = helmet
     this._pads = pads
     this._bron = bron
+    this._pants = pants
+    this._shoes = shoes
   }
   
   get helmet () {
@@ -62,11 +47,34 @@ class Botanist extends Person {
     this.updateBronDisplay()
   }
   updateBronDisplay () {
-    const bronElement = document.querySelector('.bron')
-    if (bronElement) {
-      bronElement.style.display = this._bron ? 'inline' : 'none'
-    }
+    const el = document.querySelector('.bron')
+    if (el) el.style.display = this._bron ? 'inline' : 'none'
   }
+
+  get pants () {
+    return this._pants
+  }
+  set pants (value) {
+    this._pants = value    
+    this.updatePantsDisplay()
+  }
+  updatePantsDisplay () {
+    const el = document.querySelector('.pants')
+    if (el) el.style.display = this._pants ? 'inline' : 'none'
+  }
+
+  get shoes () {
+    return this._shoes
+  }
+  set shoes (value) {
+    this._shoes = value    
+    this.updateShoesDisplay()
+  }
+  updateShoesDisplay () {
+    const el = document.querySelector('.shoes')
+    if (el) el.style.display = this._shoes ? 'inline' : 'none'
+  }
+
 }
 
 //Инициализация
@@ -95,10 +103,19 @@ document.querySelector('.field').insertAdjacentHTML(
                 <img src="./image/person/pads.png" >
             </div>
 
+            <div class="pants">
+                <img src="./image/person/pants.png" >
+            </div>   
+
             <div class="bron">
                 <img src="./image/person/bron.png" >
             </div>
-        </div>
+
+            <div class="shoes">
+                <img src="./image/person/shoes.png" >
+            </div>                 
+        
+            </div>
     </div>
 `
 )
@@ -114,6 +131,8 @@ function mouseLeaveHandler (event) {
   if (!newUser.helmet) document.querySelector('.helmet').style.display = 'none'
   if (!newUser.pads) document.querySelector('.pads').style.display = 'none'
   if (!newUser._bron) document.querySelector('.bron').style.display = 'none'
+  if (!newUser._pants) document.querySelector('.pants').style.display = 'none'
+  if (!newUser._shoes) document.querySelector('.shoes').style.display = 'none'
 }
 
 function getCoor (event) {
@@ -125,10 +144,13 @@ function getCoor (event) {
     const helmet = document.querySelector('.helmet')
     const pads = document.querySelector('.pads')
     const bron = document.querySelector('.bron')
+    const pants = document.querySelector('.pants')
+    const shoes = document.querySelector('.shoes')
 
     // Координаты мыши относительно контейнера
     // const x = event.clientX - rect.left
     const y = event.clientY - rect.top
+    // console.log(Math.round(y))
 
     if (Math.round(y) >= 0 && Math.round(y) <= 68 && !newUser._helmet) {
       helmet.style.display = 'inline'
@@ -147,6 +169,19 @@ function getCoor (event) {
     } else {
       if (!newUser._bron) bron.style.display = 'none'
     }
+
+    if (Math.round(y) >= 125 && Math.round(y) <= 155 && !newUser._pants) {
+      pants.style.display = 'inline'
+    } else {
+      if (!newUser._pants) pants.style.display = 'none'
+    }
+
+    if (Math.round(y) >= 155 && Math.round(y) <= 197 && !newUser._shoes) {
+      shoes.style.display = 'inline'
+    } else {
+      if (!newUser._shoes) shoes.style.display = 'none'
+    }
+
   }
 }
 
@@ -160,9 +195,11 @@ function handleClick (event) {
   if (Math.round(y) >= 0 && Math.round(y) <= 68) newUser.helmet = !newUser._helmet
   if (Math.round(y) >= 68 && Math.round(y) <= 78) newUser.pads = !newUser._pads
   if (Math.round(y) >= 78 && Math.round(y) <= 125) newUser.bron = !newUser._bron
+  if (Math.round(y) >= 125 && Math.round(y) <= 150) newUser.pants = !newUser._pants
+  if (Math.round(y) >= 155 && Math.round(y) <= 197) newUser.shoes = !newUser._shoes
 }
 
-let newUser = new Botanist('Игорь', 75, false, false, false)
+let newUser = new Botanist('Игорь', 75, false, false, false, false, false)
 
 //скиллы
 document.querySelectorAll('.skill').forEach(el => {

@@ -28,17 +28,17 @@ body {
   height: 200px;
 }
 
-.bron {
+.helmet {
   position: absolute;
-  top: 63px;
-  right: -6px;
+  top: -3px;
+  right: -2px;
   display: none;
 }
 
-.bron img {
-  height: 70px;
+.helmet img {
+  height: 40px;
+  z-index: 999;
 }
-
 
 .pads {
   position: absolute;
@@ -50,14 +50,33 @@ body {
   height: 33px;
 }
 
-
-.helmet {
+.bron {
   position: absolute;
-  top: -3px;
-  right: -2px;
+  top: 63px;
+  right: -6px;
   display: none;
 }
 
-.helmet img {
-  height: 40px;
+.bron img {
+  height: 69px;
+}
+
+.pants {
+  position: absolute;
+  top: 118px;
+  display: none;
+}
+
+.pants img {
+  height: 34px;
+}
+
+.shoes {
+  position: absolute;
+  top: 143px;
+  display: none;
+}
+
+.shoes img {
+  height: 56px;
 }
