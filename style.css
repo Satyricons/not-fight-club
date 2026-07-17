@@ -1,0 +1,63 @@
+.skill {
+  display: grid;
+  grid-template-columns: repeat(3, 10px); /* Фиксированная ширина */
+  grid-template-rows: repeat(3, 10px); /* Фиксированная высота */
+  gap: 2px; /* Тонкие линии между клетками */
+  /* Или без gap, а с бордерами внутри клеток */
+}
+
+body {
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+}
+
+.field {
+  display: flex;
+  width: 60%;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.player {
+  display: flex;
+  position: absolute;
+}
+
+.container_player img {
+  height: 200px;
+}
+
+.bron {
+  position: absolute;
+  top: 63px;
+  right: -6px;
+  display: none;
+}
+
+.bron img {
+  height: 70px;
+}
+
+
+.pads {
+  position: absolute;
+  top: 65px;
+  display: none;
+}
+
+.pads img {
+  height: 33px;
+}
+
+
+.helmet {
+  position: absolute;
+  top: -3px;
+  right: -2px;
+  display: none;
+}
+
+.helmet img {
+  height: 40px;
+}
