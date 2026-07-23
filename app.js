@@ -20,65 +20,47 @@ class Botanist extends Person {
   }
   set helmet (value) {
     this._helmet = value
-    this.updateHelmetDisplay()
-  }
-  updateHelmetDisplay () {
-    const el = document.querySelector('.helmet')
-    if (el) el.style.display = this._helmet ? 'inline' : 'none'
-  }
+    this.updateOpacity('helmet')
+  }  
 
   get pads () {
     return this._pads
   }
   set pads (value) {
     this._pads = value
-    this.updatePadsDisplay()
+    this.updateOpacity('pads')
   }  
-  updatePadsDisplay () {
-    const el = document.querySelector('.pads')
-    if (el) el.style.display = this._pads ? 'inline' : 'none'
-  }
-
+  
   get bron () {
     return this._bron
   }
   set bron (value) {
     this._bron = value    
-    this.updateBronDisplay()
-  }
-  updateBronDisplay () {
-    const el = document.querySelector('.bron')
-    if (el) el.style.display = this._bron ? 'inline' : 'none'
-  }
+    this.updateOpacity('bron')
+  }  
 
   get pants () {
     return this._pants
   }
   set pants (value) {
     this._pants = value    
-    this.updatePantsDisplay()
-  }
-  updatePantsDisplay () {
-    const el = document.querySelector('.pants')
-    if (el) el.style.display = this._pants ? 'inline' : 'none'
-  }
+    this.updateOpacity('pants')
+  }  
 
   get shoes () {
     return this._shoes
   }
   set shoes (value) {
     this._shoes = value    
-    this.updateShoesDisplay()
-  }
-  updateShoesDisplay () {
-    const el = document.querySelector('.shoes')
-    if (el) el.style.display = this._shoes ? 'inline' : 'none'
-  }
+    this.updateOpacity('shoes')
+  }  
 
+  updateOpacity (name) {
+    document.querySelector(`.${name}`).style.opacity = this[`_${name}`] ? 1 : 0.7    
+  }
 }
 
 //Инициализация
-
 let isMouseOverPlayer = false
 
 document.querySelector('.field').insertAdjacentHTML(
@@ -150,7 +132,6 @@ function getCoor (event) {
     // Координаты мыши относительно контейнера
     // const x = event.clientX - rect.left
     const y = event.clientY - rect.top
-    // console.log(Math.round(y))
 
     if (Math.round(y) >= 0 && Math.round(y) <= 68 && !newUser._helmet) {
       helmet.style.display = 'inline'
@@ -160,35 +141,36 @@ function getCoor (event) {
 
     if (Math.round(y) >= 68 && Math.round(y) <= 78 && !newUser._pads) {
       pads.style.display = 'inline'
-    } else {
+         } else {
       if (!newUser._pads) pads.style.display = 'none'
     }
 
     if (Math.round(y) >= 78 && Math.round(y) <= 125 && !newUser._bron) {
       bron.style.display = 'inline'
-    } else {
+          } else {
       if (!newUser._bron) bron.style.display = 'none'
     }
 
     if (Math.round(y) >= 125 && Math.round(y) <= 155 && !newUser._pants) {
       pants.style.display = 'inline'
-    } else {
+         } else {
       if (!newUser._pants) pants.style.display = 'none'
     }
 
     if (Math.round(y) >= 155 && Math.round(y) <= 197 && !newUser._shoes) {
       shoes.style.display = 'inline'
-    } else {
+          } else {
       if (!newUser._shoes) shoes.style.display = 'none'
     }
 
   }
 }
 
+//клик:
 function handleClick (event) {
   const container = event.currentTarget
   const rect = container.getBoundingClientRect()
-  const x = event.clientX - rect.left
+  // const x = event.clientX - rect.left
   const y = event.clientY - rect.top
 
   // Проверяем, что клик был в зоне
