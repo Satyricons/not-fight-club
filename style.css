@@ -1,9 +1,9 @@
-.skill {
+.skill_player,
+.skill_enemy {
   display: grid;
-  grid-template-columns: repeat(3, 10px); /* Фиксированная ширина */
-  grid-template-rows: repeat(3, 10px); /* Фиксированная высота */
-  gap: 2px; /* Тонкие линии между клетками */
-  /* Или без gap, а с бордерами внутри клеток */
+  grid-template-rows: repeat(3, 30px);
+  gap: 2px;
+  grid-auto-flow: column;
 }
 
 body {
@@ -14,7 +14,7 @@ body {
 
 .field {
   display: flex;
-  width: 60%;
+  width: 80%;
   justify-content: space-between;
   align-items: center;
 }
@@ -24,7 +24,11 @@ body {
   position: absolute;
 }
 
-.container_player img {
+.container_players{
+  width: 20%;
+}
+
+.container_players img {
   height: 200px;
 }
 
@@ -85,4 +89,3 @@ body {
 .shoes img {
   height: 56px;
 }
-
