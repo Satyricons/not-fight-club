@@ -123,7 +123,8 @@ class Enemy extends Person {
   }
 
   getZoneOtv(){
-    return 'head'
+    return ['helmet', 'pads', 'bron', 'pants', 'shoes'].sort(() => Math.random() - 0.5)
+      .slice(0, 1)
   }
 
 }
