@@ -1,7 +1,7 @@
 .skill_player,
 .skill_enemy {
   display: grid;
-  grid-template-rows: repeat(3, 30px);
+  grid-template-rows: repeat(4, 30px);
   gap: 2px;
   grid-auto-flow: column;
 }

@@ -66,13 +66,14 @@ class Botanist extends Person {
 }
 
 class Enemy extends Person {
-  constructor(name, hp, head, shoulder, body, torso, legs) {
+  constructor(name, hp, head, shoulder, body, torso, legs, imun) {
     super(name, hp)
     this._head = head
     this._shoulder = shoulder
     this._body = body
     this._torso = torso
     this._legs = legs
+    this._imun = imun
   }
 
   get head() {
@@ -96,7 +97,7 @@ class Enemy extends Person {
     this._body = value
   }
 
-get torso() {
+  get torso() {
     return this._torso
   }
   set torso(value) {
@@ -110,16 +111,21 @@ get torso() {
     this._legs = value
   }
 
+  getImun() {
+    return ['head', 'shoulder', 'body', 'torso', 'legs']
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 2)
+  }
 
-
-  getDefense() {
-    return ['head', 'shoulder', 'bron', 'pants', 'shoes']
+  getZoneAtack() {
+    return ['head', 'shoulder', 'body', 'torso', 'legs']
       .filter(key => this[`_${key}`] === true);
   }
 
-  getImun(){
-    return []
+  getZoneOtv(){
+    return 'head'
   }
+
 }
 
 //Инициализация
@@ -266,14 +272,16 @@ function handleClick_enemy(event) {
   const y = event.clientY - rect.top
 
   // Проверяем, что клик был в зоне
-  if (Math.round(y) >= 0 && Math.round(y) <= 68) {
-    newEnemy.head = !newEnemy._head
-    inicialize()
-  }
-  // if (Math.round(y) >= 68 && Math.round(y) <= 78) newUser.pads = !newUser._pads
-  // if (Math.round(y) >= 78 && Math.round(y) <= 125) newUser.bron = !newUser._bron
-  // if (Math.round(y) >= 125 && Math.round(y) <= 150) newUser.pants = !newUser._pants
-  // if (Math.round(y) >= 155 && Math.round(y) <= 197) newUser.shoes = !newUser._shoes
+  if (Math.round(y) >= 0 && Math.round(y) <= 68) newEnemy._head = true
+  if (Math.round(y) >= 68 && Math.round(y) <= 78) newEnemy._shoulder = true
+  if (Math.round(y) >= 78 && Math.round(y) <= 125) newEnemy._body = true
+  if (Math.round(y) >= 125 && Math.round(y) <= 150) newEnemy._torso = true
+  if (Math.round(y) >= 155 && Math.round(y) <= 197) newEnemy._legs = true
+
+  newEnemy.hp -= 100
+  newUser.hp -= 10
+
+
   inicialize()
 }
 
@@ -289,7 +297,7 @@ function inicialize() {
   })
 
   document.querySelectorAll('.skill_enemy').forEach(el => {
-    el.innerHTML = `<div>HP: ${newEnemy.hp}</div><div>${newEnemy.getDefense()}</div><div>Иммунитет: ${getImun()}</div>`
+    el.innerHTML = `<div>HP: ${newEnemy.hp}</div><div>Зоны атаки: ${newEnemy.getZoneAtack()}</div>Имунитет: ${newEnemy.getImun()}<div>Ответный удар: ${newEnemy.getZoneOtv()}</div>`
   })
 }
 
