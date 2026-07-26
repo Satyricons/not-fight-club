@@ -1,6 +1,8 @@
 # not-fight-club
 Пошаговая браузерная игра в жанре файтинг с настраиваемым игроком, набором противников, механикой атаки/защиты, критическими ударами и журналом боя
 
+Деплой: https://satyricons.github.io/not-fight-club/
+
 Задание: https://github.com/rolling-scopes-school/tasks/blob/master/stage0.5%20Bootcamp/tasks/notFightClub/README.md
 
 Скриншот:
