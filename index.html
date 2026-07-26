@@ -1,16 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <script src="./app.js" defer></script>
-    <link rel="stylesheet" href="./style.css">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Not fight club</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>⚔️ Битва: Ботаник vs Вампир</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div class="field">
+    <div class="game-container">
+        <div class="field"></div>
+        
+        <div id="battleLog">
+            <div id="battleMessage">⚔️ Начни битву! Кликни по врагу</div>
+        </div>
 
-
+        <div id="controls">
+            <button onclick="resetBattle()">🔄 Новая битва</button>
+        </div>
     </div>
+
+    <script src="./script.js"></script>
 </body>
 </html>
