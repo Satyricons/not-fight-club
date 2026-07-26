@@ -42,7 +42,6 @@ class Botanist extends Person {
         this._attackCount = 0;
         this._attacksPerTurn = 1;
         
-        // Пересчитываем _equippedCount на основе переданного оборудования
         this._equippedCount = Object.values(this._equipment).filter(v => v === true).length;
     }
 
@@ -98,7 +97,6 @@ class Botanist extends Person {
         }
     }
 
-    // ===== НОВОЕ: метод для получения данных для сохранения =====
     toJSON() {
         return {
             name: this.name,
@@ -110,7 +108,6 @@ class Botanist extends Person {
         };
     }
 
-    // ===== НОВОЕ: метод для загрузки данных из сохранения =====
     fromJSON(data) {
         this.name = data.name;
         this.hp = data.hp;
@@ -229,7 +226,6 @@ class Enemy extends Person {
         return this._attacksPerTurn;
     }
 
-    // ===== НОВОЕ: метод для получения данных для сохранения =====
     toJSON() {
         return {
             name: this.name,
@@ -240,7 +236,6 @@ class Enemy extends Person {
         };
     }
 
-    // ===== НОВОЕ: метод для загрузки данных из сохранения =====
     fromJSON(data) {
         this.name = data.name;
         this.hp = data.hp;
@@ -290,11 +285,143 @@ const enemyZones = [
 ];
 
 // ============================================================
-// 5. ИНИЦИАЛИЗАЦИЯ С ЗАГРУЗКОЙ ИЗ localStorage
+// 5. ПЕРЕМЕННЫЕ
 // ============================================================
+let newUser = null;
+let newEnemy = null;
+let isMouseOverPlayer = false;
+let isBattleActive = true;
+let isEnemyTurn = false;
+let messageTimeout = null;
+let autoSaveInterval = null;
 
-// ===== НОВОЕ: функции для работы с localStorage =====
+const STORAGE_KEYS = {
+    PLAYER_NAME: 'botanist_player_name',
+    GAME_SAVE: 'botanist_game_save'
+};
+
+// ============================================================
+// 6. ФУНКЦИИ РАБОТЫ С ИМЕНЕМ
+// ============================================================
+function getSavedName() {
+    try {
+        return localStorage.getItem(STORAGE_KEYS.PLAYER_NAME) || '';
+    } catch (e) {
+        return '';
+    }
+}
+
+function savePlayerName(name) {
+    try {
+        localStorage.setItem(STORAGE_KEYS.PLAYER_NAME, name);
+        console.log('💾 Имя сохранено:', name);
+    } catch (e) {
+        console.warn('⚠️ Ошибка сохранения имени:', e);
+    }
+}
+
+function promptPlayerName() {
+    return new Promise((resolve) => {
+        const savedName = getSavedName();
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        `;
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: #1a1a2e;
+            padding: 40px;
+            border-radius: 25px;
+            border: 2px solid #3a3a5a;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        `;
+        
+        modalContent.innerHTML = `
+            <h2 style="color: #c0c0e0; margin-bottom: 10px; font-size: 24px;">🌿 Введите имя ботаника</h2>
+            <p style="color: #8899bb; margin-bottom: 20px; font-size: 14px;">Имя будет сохранено в localStorage</p>
+            <input type="text" id="nameInput" value="${savedName}" 
+                   style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #3a3a5a; 
+                          background: #0a0a14; color: #c0c0e0; font-size: 18px; text-align: center;
+                          outline: none; transition: border-color 0.3s;"
+                   placeholder="Введите имя..." maxlength="20">
+            <div style="display: flex; gap: 12px; margin-top: 20px; justify-content: center;">
+                <button id="confirmName" 
+                        style="background: #6c5ce7; color: white; border: none; padding: 10px 30px; 
+                               border-radius: 40px; font-size: 16px; font-weight: 600; cursor: pointer;
+                               transition: all 0.2s;">
+                    ✅ Подтвердить
+                </button>
+            </div>
+        `;
+        
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        const input = modalContent.querySelector('#nameInput');
+        input.focus();
+        input.select();
+        
+        const confirmBtn = modalContent.querySelector('#confirmName');
+        
+        function confirmName() {
+            const name = input.value.trim() || 'Ботаник';
+            savePlayerName(name);
+            modal.remove();
+            resolve(name);
+        }
+        
+        confirmBtn.addEventListener('click', confirmName);
+        
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                confirmName();
+            }
+        });
+        
+        if (savedName) {
+            const skipBtn = document.createElement('button');
+            skipBtn.textContent = '📂 Использовать сохранённое';
+            skipBtn.style.cssText = `
+                background: transparent;
+                color: #8899bb;
+                border: 1px solid #3a3a5a;
+                padding: 8px 20px;
+                border-radius: 40px;
+                font-size: 14px;
+                cursor: pointer;
+                transition: all 0.2s;
+                margin-top: 10px;
+            `;
+            skipBtn.onclick = () => {
+                modal.remove();
+                resolve(savedName);
+            };
+            modalContent.appendChild(skipBtn);
+        }
+    });
+}
+
+// ============================================================
+// 7. ФУНКЦИИ СОХРАНЕНИЯ
+// ============================================================
 function saveGame() {
+    if (!newUser || !newEnemy) return;
+    
     try {
         const saveData = {
             player: newUser.toJSON(),
@@ -303,7 +430,7 @@ function saveGame() {
             isEnemyTurn: isEnemyTurn,
             timestamp: Date.now()
         };
-        localStorage.setItem('botanist_game_save', JSON.stringify(saveData));
+        localStorage.setItem(STORAGE_KEYS.GAME_SAVE, JSON.stringify(saveData));
         console.log('💾 Игра сохранена!');
     } catch (e) {
         console.warn('⚠️ Ошибка сохранения:', e);
@@ -311,28 +438,24 @@ function saveGame() {
 }
 
 function loadGame() {
+    if (!newUser || !newEnemy) return false;
+    
     try {
-        const saved = localStorage.getItem('botanist_game_save');
+        const saved = localStorage.getItem(STORAGE_KEYS.GAME_SAVE);
         if (!saved) return false;
         
         const data = JSON.parse(saved);
         
-        // Восстанавливаем игрока
         newUser.fromJSON(data.player);
-        
-        // Восстанавливаем врага
         newEnemy.fromJSON(data.enemy);
         
-        // Восстанавливаем флаги
         isBattleActive = data.isBattleActive !== undefined ? data.isBattleActive : true;
         isEnemyTurn = data.isEnemyTurn || false;
         
-        // Проверяем, жив ли враг (если был повержен)
         if (!newEnemy.isAlive()) {
             isBattleActive = false;
         }
         
-        // Проверяем, жив ли игрок
         if (!newUser.isAlive()) {
             isBattleActive = false;
         }
@@ -347,64 +470,8 @@ function loadGame() {
     }
 }
 
-// ===== НОВОЕ: автосохранение через интервал =====
-let autoSaveInterval = null;
-
-function startAutoSave(intervalMs = 10000) {
-    if (autoSaveInterval) clearInterval(autoSaveInterval);
-    autoSaveInterval = setInterval(() => {
-        if (isBattleActive || !isBattleActive) {
-            saveGame();
-        }
-    }, intervalMs);
-    console.log(`🔄 Автосохранение каждые ${intervalMs/1000} секунд`);
-}
-
-function stopAutoSave() {
-    if (autoSaveInterval) {
-        clearInterval(autoSaveInterval);
-        autoSaveInterval = null;
-    }
-}
-
 // ============================================================
-// 5a. СОЗДАНИЕ ПЕРСОНАЖЕЙ (с загрузкой или по умолчанию)
-// ============================================================
-let newUser = new Botanist('Игорь', 100, {
-    helmet: false,
-    pads: false,
-    bron: false,
-    pants: false,
-    shoes: false
-});
-
-let newEnemy = new Enemy('Вампир Лёха', 80);
-
-let isMouseOverPlayer = false;
-let isBattleActive = true;
-let isEnemyTurn = false;
-
-// Пытаемся загрузить сохранение
-const loaded = loadGame();
-
-// Если сохранения нет или оно повреждено, используем значения по умолчанию
-if (!loaded) {
-    // Сбрасываем всё к начальным значениям
-    newUser = new Botanist('Игорь', 100, {
-        helmet: false,
-        pads: false,
-        bron: false,
-        pants: false,
-        shoes: false
-    });
-    newEnemy = new Enemy('Вампир Лёха', 80);
-    isBattleActive = true;
-    isEnemyTurn = false;
-    console.log('🆕 Создана новая игра');
-}
-
-// ============================================================
-// 6. ГЕНЕРАЦИЯ HTML
+// 8. ГЕНЕРАЦИЯ HTML
 // ============================================================
 function generateEquipmentHTML() {
     return equipmentSlots.map(slot => `
@@ -422,16 +489,17 @@ function generateEnemyZonesHTML() {
     `).join('');
 }
 
-// Создаём HTML
-document.querySelector('.field').insertAdjacentHTML(
-    'beforeend',
-    `
-    <!-- ИГРОК -->
+function createGameHTML() {
+    const field = document.querySelector('.field');
+    if (!field) return;
+    
+    field.innerHTML = `
     <div class="container_player" id="playerContainer">
         <div class="skill" id="playerSkill">
             <div class="hp">❤️ ${newUser.hp}/${newUser.maxHp}</div>
             <div class="defense">🛡️ ${newUser.getDefense().join(', ') || 'нет'}</div>
             <div class="equip-info">📦 ${newUser.getEquippedCount()}/${newUser.getMaxEquip()}</div>
+            <div class="player-name" style="color:#6c5ce7; font-weight:bold; font-size:14px;">👤 ${newUser.name}</div>
         </div>
         <div 
             class="player" 
@@ -446,10 +514,8 @@ document.querySelector('.field').insertAdjacentHTML(
         </div>
     </div>
 
-    <!-- VS -->
     <div style="color:#4a4a6a; font-size:40px; font-weight:bold; text-shadow:0 0 30px rgba(100,50,200,0.3);">⚔️</div>
 
-    <!-- ВРАГ -->
     <div class="container_player" id="enemyContainer">
         <div class="skill" id="enemySkill">
             <div class="hp">❤️ ${newEnemy.hp}/${newEnemy.maxHp}</div>
@@ -465,14 +531,15 @@ document.querySelector('.field').insertAdjacentHTML(
             ${generateEnemyZonesHTML()}
         </div>
     </div>
-    `
-);
+    `;
+}
 
 // ============================================================
-// 7. ОБНОВЛЕНИЕ ИНТЕРФЕЙСА
+// 9. ОБНОВЛЕНИЕ UI
 // ============================================================
 function updateUI() {
-    // Игрок
+    if (!newUser || !newEnemy) return;
+    
     const playerSkill = document.getElementById('playerSkill');
     if (playerSkill) {
         const defense = newUser.getDefense();
@@ -480,10 +547,10 @@ function updateUI() {
             <div class="hp">❤️ ${newUser.hp}/${newUser.maxHp}</div>
             <div class="defense">🛡️ ${defense.length ? defense.join(', ') : 'нет'}</div>
             <div class="equip-info">📦 ${newUser.getEquippedCount()}/${newUser.getMaxEquip()}</div>
+            <div class="player-name" style="color:#6c5ce7; font-weight:bold; font-size:14px;">👤 ${newUser.name}</div>
         `;
     }
 
-    // Враг
     const enemySkill = document.getElementById('enemySkill');
     if (enemySkill) {
         enemySkill.innerHTML = `
@@ -493,7 +560,6 @@ function updateUI() {
         `;
     }
 
-    // Обновляем отображение экипировки
     Object.keys(newUser._equipment).forEach(key => {
         const el = document.querySelector(`.slot-${key}`);
         if (el) {
@@ -502,7 +568,6 @@ function updateUI() {
         }
     });
 
-    // Обновляем зоны врага
     enemyZones.forEach(zone => {
         const el = document.querySelector(`.zone-${zone.name}`);
         if (el) {
@@ -512,12 +577,28 @@ function updateUI() {
 }
 
 // ============================================================
-// 8. БОЕВАЯ СИСТЕМА
+// 10. АВТОСОХРАНЕНИЕ
 // ============================================================
+function startAutoSave(intervalMs = 10000) {
+    if (autoSaveInterval) clearInterval(autoSaveInterval);
+    autoSaveInterval = setInterval(() => {
+        if (newUser && newEnemy) {
+            saveGame();
+        }
+    }, intervalMs);
+    console.log(`🔄 Автосохранение каждые ${intervalMs/1000} секунд`);
+}
 
-// Показ сообщений
-let messageTimeout = null;
+function stopAutoSave() {
+    if (autoSaveInterval) {
+        clearInterval(autoSaveInterval);
+        autoSaveInterval = null;
+    }
+}
 
+// ============================================================
+// 11. СООБЩЕНИЯ
+// ============================================================
 function showMessage(text, color = '#ffffff', isPermanent = false) {
     const el = document.getElementById('battleMessage');
     if (!el) return;
@@ -544,7 +625,6 @@ function getZoneFromY(y, zones) {
     return null;
 }
 
-// Анимация удара
 function animateHit(selector, intensity = 1) {
     const el = document.querySelector(selector);
     if (!el) return;
@@ -561,7 +641,7 @@ function animateHit(selector, intensity = 1) {
 }
 
 // ============================================================
-// 8a. АТАКА ИГРОКА (1 раз за ход)
+// 12. БОЕВАЯ СИСТЕМА
 // ============================================================
 function playerAttack(zoneName) {
     if (!isBattleActive) {
@@ -588,11 +668,9 @@ function playerAttack(zoneName) {
     
     const immunity = newEnemy.getImmunity();
     let damage = 0;
-    let isImmune = false;
     let isCritical = false;
     
     if (immunity.includes(zoneName)) {
-        isImmune = true;
         damage = Math.floor(Math.random() * 8) + 3;
         showMessage(`🛡️ Иммунитет! Урон: ${damage}`, '#a29bfe');
     } else {
@@ -627,7 +705,7 @@ function playerAttack(zoneName) {
         showMessage(`🏆 ${newEnemy.name} ПОВЕРЖЕН! 🏆`, '#fdcb6e', true);
         isBattleActive = false;
         updateUI();
-        saveGame(); // ===== НОВОЕ: сохраняем после победы =====
+        saveGame();
         return;
     }
     
@@ -638,9 +716,6 @@ function playerAttack(zoneName) {
     }, 600);
 }
 
-// ============================================================
-// 8c. СЕРИЯ АТАК ВРАГА (2 раза подряд)
-// ============================================================
 function enemyAttackSequence() {
     if (!isBattleActive || !newUser.isAlive()) {
         isEnemyTurn = false;
@@ -655,10 +730,10 @@ function enemyAttackSequence() {
             isEnemyTurn = false;
             newUser.resetAttacks();
             if (isBattleActive) {
-                showMessage('⚔️ Твой ход! Атакуй!', '#55efc4');
+                showMessage(`⚔️ ${newUser.name}, твой ход! Атакуй!`, '#55efc4');
             }
             updateUI();
-            saveGame(); // ===== НОВОЕ: сохраняем после хода врага =====
+            saveGame();
             return;
         }
 
@@ -704,7 +779,7 @@ function enemyAttackSequence() {
             isBattleActive = false;
             isEnemyTurn = false;
             updateUI();
-            saveGame(); // ===== НОВОЕ: сохраняем после поражения =====
+            saveGame();
             return;
         }
         
@@ -714,10 +789,10 @@ function enemyAttackSequence() {
             isEnemyTurn = false;
             newUser.resetAttacks();
             if (isBattleActive) {
-                showMessage('⚔️ Твой ход! Атакуй!', '#55efc4');
+                showMessage(`⚔️ ${newUser.name}, твой ход! Атакуй!`, '#55efc4');
             }
             updateUI();
-            saveGame(); // ===== НОВОЕ: сохраняем после хода врага =====
+            saveGame();
         }
     }
     
@@ -725,9 +800,8 @@ function enemyAttackSequence() {
 }
 
 // ============================================================
-// 9. ОБРАБОТЧИКИ СОБЫТИЙ
+// 13. ОБРАБОТЧИКИ СОБЫТИЙ
 // ============================================================
-
 function mouseEnterHandler(event) {
     isMouseOverPlayer = true;
 }
@@ -764,7 +838,6 @@ function getCoor(event) {
     });
 }
 
-// Клик по игроку (переключение экипировки)
 function handleClick(event) {
     if (isEnemyTurn) {
         showMessage('⏳ Сейчас ход врага!', '#888');
@@ -787,13 +860,12 @@ function handleClick(event) {
                 console.log(`🛡️ ${slot.name}: ${newState ? 'включён' : 'выключен'}`);
                 showMessage(`🛡️ ${slot.name} ${newState ? 'включён' : 'выключен'} (${newUser.getEquippedCount()}/${newUser.getMaxEquip()})`, '#74b9ff');
                 updateUI();
-                saveGame(); // ===== НОВОЕ: сохраняем после смены экипировки =====
+                saveGame();
             }
         }
     });
 }
 
-// Клик по врагу (АТАКА!)
 function handleClickEnemy(event) {
     if (isEnemyTurn) {
         showMessage('⏳ Сейчас ход врага!', '#888');
@@ -829,9 +901,11 @@ function handleClickEnemy(event) {
 }
 
 // ============================================================
-// 10. СБРОС БИТВЫ
+// 14. СБРОС БИТВЫ
 // ============================================================
 function resetBattle() {
+    if (!newUser || !newEnemy) return;
+    
     newUser.hp = newUser.maxHp;
     newUser.resetAttacks();
     newUser._equippedCount = 0;
@@ -844,34 +918,116 @@ function resetBattle() {
         newEnemy._zones[key] = false;
     });
     updateUI();
-    showMessage('🔄 Новая битва! Атакуй!', '#55efc4');
+    showMessage(`🔄 Новая битва! ${newUser.name}, атакуй!`, '#55efc4');
     console.log('🔄 Битва сброшена!');
-    saveGame(); // ===== НОВОЕ: сохраняем после сброса =====
-}
-
-// ============================================================
-// 11. ЗАПУСК
-// ============================================================
-updateUI();
-
-// Если битва активна, показываем приветственное сообщение
-if (isBattleActive) {
-    showMessage('⚔️ Кликни по врагу, чтобы атаковать! (1 атака за ход)', '#aab');
-} else if (!newUser.isAlive()) {
-    showMessage(`💀 ${newUser.name} ПОВЕРЖЕН! Нажми "Новая битва"`, '#ff6b6b', true);
-} else if (!newEnemy.isAlive()) {
-    showMessage(`🏆 ${newEnemy.name} ПОВЕРЖЕН! Нажми "Новая битва"`, '#fdcb6e', true);
-}
-
-console.log('🎮 Игра загружена!');
-console.log(`👤 Игрок: ${newUser.name} (HP: ${newUser.hp}, экипировка: ${newUser.getEquippedCount()}/${newUser.getMaxEquip()})`);
-console.log(`🧛 Враг: ${newEnemy.name} (HP: ${newEnemy.hp}, иммунитет: ${newEnemy.getImmunity().join(', ')}, атак за ход: ${newEnemy.getAttacksPerTurn()})`);
-
-// ===== НОВОЕ: запускаем автосохранение =====
-startAutoSave(10000); // Сохраняем каждые 10 секунд
-
-// ===== НОВОЕ: сохраняем при закрытии страницы =====
-window.addEventListener('beforeunload', function() {
     saveGame();
-    stopAutoSave();
+}
+
+// ============================================================
+// 15. ИНИЦИАЛИЗАЦИЯ И ЗАПУСК
+// ============================================================
+async function initGame() {
+    const playerName = await promptPlayerName();
+    
+    newUser = new Botanist(playerName, 100, {
+        helmet: false,
+        pads: false,
+        bron: false,
+        pants: false,
+        shoes: false
+    });
+    
+    newEnemy = new Enemy('Вампир Лёха', 80);
+    
+    const loaded = loadGame();
+    
+    if (!loaded) {
+        newUser = new Botanist(playerName, 100, {
+            helmet: false,
+            pads: false,
+            bron: false,
+            pants: false,
+            shoes: false
+        });
+        newEnemy = new Enemy('Вампир Лёха', 80);
+        isBattleActive = true;
+        isEnemyTurn = false;
+        console.log('🆕 Создана новая игра');
+    }
+    
+    createGameHTML();
+    updateUI();
+    startAutoSave(10000);
+    
+    if (isBattleActive) {
+        showMessage(`⚔️ ${newUser.name}, кликни по врагу, чтобы атаковать!`, '#aab');
+    } else if (!newUser.isAlive()) {
+        showMessage(`💀 ${newUser.name} ПОВЕРЖЕН! Нажми "Новая битва"`, '#ff6b6b', true);
+    } else if (!newEnemy.isAlive()) {
+        showMessage(`🏆 ${newEnemy.name} ПОВЕРЖЕН! Нажми "Новая битва"`, '#fdcb6e', true);
+    }
+    
+    // Сохраняем при закрытии страницы
+    window.addEventListener('beforeunload', function() {
+        saveGame();
+        stopAutoSave();
+    });
+    
+    // Делаем функции глобальными для доступа из HTML
+    window.resetBattle = resetBattle;
+    window.mouseEnterHandler = mouseEnterHandler;
+    window.mouseLeaveHandler = mouseLeaveHandler;
+    window.getCoor = getCoor;
+    window.handleClick = handleClick;
+    window.handleClickEnemy = handleClickEnemy;
+    window.changePlayerName = changePlayerName;
+    
+    console.log('🎮 Игра загружена!');
+    console.log(`👤 Игрок: ${newUser.name} (HP: ${newUser.hp}, экипировка: ${newUser.getEquippedCount()}/${newUser.getMaxEquip()})`);
+    console.log(`🧛 Враг: ${newEnemy.name} (HP: ${newEnemy.hp}, иммунитет: ${newEnemy.getImmunity().join(', ')}, атак за ход: ${newEnemy.getAttacksPerTurn()})`);
+}
+
+// ============================================================
+// 16. ФУНКЦИЯ СМЕНЫ ИМЕНИ
+// ============================================================
+function changePlayerName() {
+    if (!newUser) return;
+    
+    const newName = prompt('Введите новое имя ботаника:', newUser.name);
+    if (newName && newName.trim()) {
+        const trimmedName = newName.trim();
+        newUser.name = trimmedName;
+        savePlayerName(trimmedName);
+        saveGame();
+        updateUI();
+        showMessage(`✅ Имя изменено на: ${trimmedName}`, '#55efc4');
+        console.log(`🔄 Имя изменено на: ${trimmedName}`);
+    }
+}
+
+// ============================================================
+// 17. ЗАПУСК ИГРЫ
+// ============================================================
+// Ждём загрузки DOM и запускаем игру
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM загружен, запускаем игру...');
+    initGame();
+});
+
+// ============================================================
+// 18. ОБРАБОТЧИК ДЛЯ КНОПКИ "НОВАЯ БИТВА" (если есть в HTML)
+// ============================================================
+// Если кнопка с id="resetBtn" существует, вешаем обработчик
+document.addEventListener('DOMContentLoaded', function() {
+    const resetBtn = document.getElementById('resetBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            if (newUser && newEnemy) {
+                resetBattle();
+            }
+        });
+        console.log('🔘 Кнопка "Новая битва" привязана');
+    } else {
+        console.log('⚠️ Кнопка "Новая битва" не найдена');
+    }
 });
