@@ -737,10 +737,10 @@ function playerAttack(zoneName) {
     
     if (immunity.includes(zoneName)) {
         isImmune = true;
-        damage = Math.floor(Math.random() * 8) + 3;
+        damage = Math.floor(Math.random() * 3) + 2;
         showMessage(`🛡️ ИММУНИТЕТ! Зона: ${zoneName} | Урон: ${damage}`, '#a29bfe');
     } else {
-        const baseDamage = Math.floor(Math.random() * 15) + 20;
+        const baseDamage = Math.floor(Math.random() * 7) + 10;
         
         const zoneMultipliers = {
             'head': 1.5,
@@ -815,7 +815,7 @@ function enemyAttackSequence() {
         console.log(`🔄 Атака врага ${attacksDone + 1}/${totalAttacks}`);
         
         const zone = newEnemy.getRandomAttackZone();
-        const baseDamage = Math.floor(Math.random() * 15) + 10;
+        const baseDamage = Math.floor(Math.random() * 7) + 10;
         
         let damage = baseDamage;
         
