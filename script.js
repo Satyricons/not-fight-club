@@ -320,8 +320,8 @@ const equipmentSlots = [
 ];
 
 const enemyZones = [
-    { name: 'head', yStart: 0, yEnd: 145 },
-    { name: 'shoulder', yStart: 145, yEnd: 190},
+    { name: 'head', yStart: 20, yEnd: 155.5 },
+    { name: 'shoulder', yStart: 155.5, yEnd: 200},
     { name: 'body', yStart: 190, yEnd: 200 },
     { name: 'torso', yStart: 200, yEnd: 250 },
     { name: 'legs', yStart: 250, yEnd: 385 }
@@ -518,7 +518,7 @@ function loadGame() {
 // ============================================================
 function generateEquipmentHTML() {
     return equipmentSlots.map(slot => `
-        <div class="equipment-slot slot-${slot.name}" style="display:none; opacity:0.3;">
+        <div class="equipment-slot slot-${slot.name}" style="display:none; opacity:0.5;">
             <img src="./image/person/${slot.name}.png" alt="${slot.name}" />
         </div>
     `).join('');
@@ -527,7 +527,7 @@ function generateEquipmentHTML() {
 function generateEnemyZonesHTML() {
     return enemyZones.map(zone => `
         <div class="enemy-zone zone-${zone.name}" 
-             style="display:none; position:absolute; left:0; top:${zone.yStart}%; width:100%; height:${(zone.yEnd - zone.yStart) * 0.5}%; background:rgba(255,215,0,0.15); border:1px dashed rgba(255,215,0,0.3); pointer-events:none; z-index:2;">
+             style="display:none; position:absolute; left:0; top:${zone.yStart}px; width:100%; height:${(zone.yEnd - zone.yStart)}px; background:rgba(255,215,0,0.15); border:1px dashed rgba(255,215,0,0.3); pointer-events:none; z-index:2;">
         </div>
     `).join('');
 }
