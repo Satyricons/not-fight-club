@@ -1,0 +1,274 @@
+/* ============================================================
+   ОБЩИЕ СТИЛИ
+   ============================================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    background: #0d0d1a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.game-container {
+    background: #1a1a2e;
+    padding: 30px 40px 30px 40px;
+    border-radius: 30px;
+    border: 2px solid #3a3a5a;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+/* ============================================================
+   ПОЛЕ БОЯ
+   ============================================================ */
+.field {
+    display: flex;
+    gap: 60px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.container_player {
+    position: relative;
+    background: #12121f;
+    padding: 20px 25px 25px 25px;
+    border-radius: 25px;
+    border: 2px solid #2a2a44;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.container_player .skill {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 15px;
+    min-height: 40px;
+}
+
+.container_player .skill div {
+    background: #22223b;
+    color: #aab;
+    padding: 6px 16px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid #3a3a5a;
+    box-shadow: 0 3px 0 #0a0a14;
+    font-family: monospace;
+    white-space: nowrap;
+}
+
+.container_player .skill .hp {
+    color: #ff6b6b;
+}
+.container_player .skill .defense {
+    color: #74b9ff;
+}
+.container_player .skill .immunity {
+    color: #fdcb6e;
+}
+.container_player .skill .attack-zone {
+    color: #55efc4;
+}
+.container_player .skill .counter {
+    color: #fd79a8;
+}
+
+/* ============================================================
+   ПЕРСОНАЖИ
+   ============================================================ */
+.player {
+    position: relative;
+    display: inline-block;
+    cursor: crosshair;
+    border-radius: 16px;
+    background: #0a0a14;
+    padding: 10px;
+    border: 2px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.player:hover {
+    border-color: #6c5ce7;
+    box-shadow: 0 0 30px rgba(108, 92, 231, 0.2);
+}
+
+.player img {
+    display: block;
+    max-width: 250px;
+    height: auto;
+    border-radius: 12px;
+    pointer-events: none;
+    position: relative;
+    z-index: 1;
+}
+
+/* ============================================================
+   ЭКИПИРОВКА (слоты)
+   ============================================================ */
+.equipment-slot {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    display: none;
+    pointer-events: none;
+    z-index: 5;
+    transition: opacity 0.2s ease;
+}
+
+.equipment-slot img {
+    width: 100%;
+    height: auto;
+    display: block;
+    pointer-events: none;
+}
+
+/* Индивидуальные позиции */
+.slot-helmet {
+    top: 2%;
+    width: 95%;
+}
+.slot-pads {
+  top: 33%;
+    width: 93%;
+}
+.slot-bron {
+    top: 34%;
+    width: 91%;
+}
+.slot-pants {
+    top: 58%;
+    width: 96%;
+}
+.slot-shoes {
+    top: 71%;
+    width: 93%;
+}
+
+/* ============================================================
+   ЛОГ БИТВЫ
+   ============================================================ */
+#battleLog {
+    width: 100%;
+    min-width: 500px;
+    padding: 15px 20px;
+    background: #0a0a14;
+    border-radius: 16px;
+    border: 1px solid #2a2a44;
+    min-height: 70px;
+    max-height: 120px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    color: #8899bb;
+    text-align: center;
+}
+
+#battleMessage {
+    font-size: 20px;
+    font-weight: bold;
+    transition: opacity 0.4s ease;
+    padding: 5px;
+}
+
+#battleMessage .damage {
+    color: #ff6b6b;
+}
+#battleMessage .heal {
+    color: #55efc4;
+}
+#battleMessage .critical {
+    color: #fdcb6e;
+}
+#battleMessage .immune {
+    color: #a29bfe;
+}
+#battleMessage .defense {
+    color: #74b9ff;
+}
+#battleMessage .win {
+    color: #fdcb6e;
+    font-size: 26px;
+}
+#battleMessage .lose {
+    color: #ff6b6b;
+    font-size: 26px;
+}
+
+/* ============================================================
+   КНОПКИ
+   ============================================================ */
+#controls {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+#controls button {
+    background: #2a2a44;
+    color: #c0c0e0;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 40px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid #4a4a6a;
+    box-shadow: 0 4px 0 #0a0a14;
+}
+
+#controls button:hover {
+    background: #3a3a5a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #0a0a14;
+}
+
+#controls button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #0a0a14;
+}
+
+/* ============================================================
+   АДАПТИВНОСТЬ
+   ============================================================ */
+@media (max-width: 800px) {
+    .field {
+        flex-direction: column;
+        gap: 30px;
+    }
+    #battleLog {
+        min-width: unset;
+        width: 100%;
+        max-width: 350px;
+    }
+    .game-container {
+        padding: 20px;
+    }
+    .player img {
+        max-width: 180px;
+    }
+    .container_player .skill div {
+        font-size: 11px;
+        padding: 4px 12px;
+    }
+}
