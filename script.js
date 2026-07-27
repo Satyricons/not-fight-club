@@ -38,7 +38,8 @@ class Botanist extends Person {
             ...equipment
         };
         this._equippedCount = 0;
-        this._maxEquip = 2;
+        this._maxEquip = 2;          // Максимум 2 вещи
+        this._minEquipToAttack = 2;  // НУЖНО ровно 2 вещи для атаки!
         this._attackCount = 0;
         this._attacksPerTurn = 1;
         
@@ -55,9 +56,26 @@ class Botanist extends Person {
 
     getEquippedCount() { return this._equippedCount; }
     getMaxEquip() { return this._maxEquip; }
+    
+    // ===== НОВОЕ: проверка, может ли атаковать (нужно ровно 2 вещи) =====
+    canAttack() {
+        return this._equippedCount >= this._minEquipToAttack && this._attackCount < this._attacksPerTurn;
+    }
+    
+    // ===== НОВОЕ: сообщение, почему нельзя атаковать =====
+    getAttackBlockReason() {
+        if (this._equippedCount < this._minEquipToAttack) {
+            return `⚠️ Нужно надеть ${this._minEquipToAttack} вещи! (сейчас: ${this._equippedCount})`;
+        }
+        if (this._attackCount >= this._attacksPerTurn) {
+            return '⏳ Вы уже атаковали!';
+        }
+        return null;
+    }
+
     canEquip() { return this._equippedCount < this._maxEquip; }
-    canAttack() { return this._attackCount < this._attacksPerTurn; }
     resetAttacks() { this._attackCount = 0; }
+    
     useAttack() {
         if (this.canAttack()) {
             this._attackCount++;
@@ -543,10 +561,17 @@ function updateUI() {
     const playerSkill = document.getElementById('playerSkill');
     if (playerSkill) {
         const defense = newUser.getDefense();
+        const equipped = newUser.getEquippedCount();
+        const needToAttack = 2;
+        const canAttack = newUser.canAttack();
+        
         playerSkill.innerHTML = `
             <div class="hp">❤️ ${newUser.hp}/${newUser.maxHp}</div>
             <div class="defense">🛡️ ${defense.length ? defense.join(', ') : 'нет'}</div>
-            <div class="equip-info">📦 ${newUser.getEquippedCount()}/${newUser.getMaxEquip()}</div>
+            <div class="equip-info">📦 ${equipped}/${newUser.getMaxEquip()}</div>
+            <div class="attack-status" style="color: ${canAttack ? '#55efc4' : '#ff6b6b'}; font-weight:bold; font-size:13px;">
+                ${canAttack ? '⚔️ ГОТОВ К АТАКЕ!' : `⚠️ Нужно ${needToAttack} вещи (сейчас ${equipped})`}
+            </div>
             <div class="player-name" style="color:#6c5ce7; font-weight:bold; font-size:14px;">👤 ${newUser.name}</div>
         `;
     }
@@ -659,8 +684,14 @@ function playerAttack(zoneName) {
         return;
     }
     
+    // ===== НОВОЕ: проверка может ли атаковать =====
     if (!newUser.canAttack()) {
-        showMessage('⏳ Вы уже атаковали!', '#888');
+        const reason = newUser.getAttackBlockReason();
+        if (reason) {
+            showMessage(reason, '#ff6b6b');
+        } else {
+            showMessage('⏳ Вы не можете атаковать!', '#888');
+        }
         return;
     }
 
@@ -884,6 +915,13 @@ function handleClickEnemy(event) {
         return;
     }
     
+    // ===== НОВОЕ: проверка перед атакой =====
+    if (!newUser.canAttack()) {
+        const reason = newUser.getAttackBlockReason();
+        showMessage(reason || '⏳ Вы не можете атаковать!', '#ff6b6b');
+        return;
+    }
+    
     const container = event.currentTarget;
     const rect = container.getBoundingClientRect();
     const y = event.clientY - rect.top;
@@ -918,13 +956,31 @@ function resetBattle() {
         newEnemy._zones[key] = false;
     });
     updateUI();
-    showMessage(`🔄 Новая битва! ${newUser.name}, атакуй!`, '#55efc4');
+    showMessage(`🔄 Новая битва! ${newUser.name}, надень 2 вещи и атакуй!`, '#55efc4', 3000);
     console.log('🔄 Битва сброшена!');
     saveGame();
 }
 
 // ============================================================
-// 15. ИНИЦИАЛИЗАЦИЯ И ЗАПУСК
+// 15. ФУНКЦИЯ СМЕНЫ ИМЕНИ
+// ============================================================
+function changePlayerName() {
+    if (!newUser) return;
+    
+    const newName = prompt('Введите новое имя ботаника:', newUser.name);
+    if (newName && newName.trim()) {
+        const trimmedName = newName.trim();
+        newUser.name = trimmedName;
+        savePlayerName(trimmedName);
+        saveGame();
+        updateUI();
+        showMessage(`✅ Имя изменено на: ${trimmedName}`, '#55efc4');
+        console.log(`🔄 Имя изменено на: ${trimmedName}`);
+    }
+}
+
+// ============================================================
+// 16. ИНИЦИАЛИЗАЦИЯ И ЗАПУСК
 // ============================================================
 async function initGame() {
     const playerName = await promptPlayerName();
@@ -960,7 +1016,12 @@ async function initGame() {
     startAutoSave(10000);
     
     if (isBattleActive) {
-        showMessage(`⚔️ ${newUser.name}, кликни по врагу, чтобы атаковать!`, '#aab');
+        const equipped = newUser.getEquippedCount();
+        if (equipped < 2) {
+            showMessage(`⚔️ ${newUser.name}, надень 2 вещи на персонажа, чтобы атаковать!`, '#fdcb6e', 4000);
+        } else {
+            showMessage(`⚔️ ${newUser.name}, кликни по врагу, чтобы атаковать!`, '#aab');
+        }
     } else if (!newUser.isAlive()) {
         showMessage(`💀 ${newUser.name} ПОВЕРЖЕН! Нажми "Новая битва"`, '#ff6b6b', true);
     } else if (!newEnemy.isAlive()) {
@@ -985,24 +1046,7 @@ async function initGame() {
     console.log('🎮 Игра загружена!');
     console.log(`👤 Игрок: ${newUser.name} (HP: ${newUser.hp}, экипировка: ${newUser.getEquippedCount()}/${newUser.getMaxEquip()})`);
     console.log(`🧛 Враг: ${newEnemy.name} (HP: ${newEnemy.hp}, иммунитет: ${newEnemy.getImmunity().join(', ')}, атак за ход: ${newEnemy.getAttacksPerTurn()})`);
-}
-
-// ============================================================
-// 16. ФУНКЦИЯ СМЕНЫ ИМЕНИ
-// ============================================================
-function changePlayerName() {
-    if (!newUser) return;
-    
-    const newName = prompt('Введите новое имя ботаника:', newUser.name);
-    if (newName && newName.trim()) {
-        const trimmedName = newName.trim();
-        newUser.name = trimmedName;
-        savePlayerName(trimmedName);
-        saveGame();
-        updateUI();
-        showMessage(`✅ Имя изменено на: ${trimmedName}`, '#55efc4');
-        console.log(`🔄 Имя изменено на: ${trimmedName}`);
-    }
+    console.log(`⚔️ Статус атаки: ${newUser.canAttack() ? 'ГОТОВ' : 'НУЖНО 2 ВЕЩИ'}`);
 }
 
 // ============================================================
@@ -1015,9 +1059,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
-// 18. ОБРАБОТЧИК ДЛЯ КНОПКИ "НОВАЯ БИТВА" (если есть в HTML)
+// 18. ОБРАБОТЧИК ДЛЯ КНОПКИ "НОВАЯ БИТВА"
 // ============================================================
-// Если кнопка с id="resetBtn" существует, вешаем обработчик
 document.addEventListener('DOMContentLoaded', function() {
     const resetBtn = document.getElementById('resetBtn');
     if (resetBtn) {
@@ -1031,3 +1074,5 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('⚠️ Кнопка "Новая битва" не найдена');
     }
 });
+
+console.log('✅ script.js полностью загружен!');
