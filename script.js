@@ -38,8 +38,8 @@ class Botanist extends Person {
             ...equipment
         };
         this._equippedCount = 0;
-        this._maxEquip = 2;          // Максимум 2 вещи
-        this._minEquipToAttack = 2;  // НУЖНО ровно 2 вещи для атаки!
+        this._maxEquip = 2;
+        this._minEquipToAttack = 2;
         this._attackCount = 0;
         this._attacksPerTurn = 1;
         
@@ -57,12 +57,10 @@ class Botanist extends Person {
     getEquippedCount() { return this._equippedCount; }
     getMaxEquip() { return this._maxEquip; }
     
-    // ===== НОВОЕ: проверка, может ли атаковать (нужно ровно 2 вещи) =====
     canAttack() {
         return this._equippedCount >= this._minEquipToAttack && this._attackCount < this._attacksPerTurn;
     }
     
-    // ===== НОВОЕ: сообщение, почему нельзя атаковать =====
     getAttackBlockReason() {
         if (this._equippedCount < this._minEquipToAttack) {
             return `⚠️ Нужно надеть ${this._minEquipToAttack} вещи! (сейчас: ${this._equippedCount})`;
@@ -205,7 +203,7 @@ class Botanist extends Person {
 }
 
 // ============================================================
-// 3. КЛАСС Enemy (враг) с ограничениями
+// 3. КЛАСС Enemy (враг) с изменяемым иммунитетом
 // ============================================================
 class Enemy extends Person {
     constructor(name, hp, zones = {}) {
@@ -220,6 +218,8 @@ class Enemy extends Person {
         };
         this._immunity = this.generateImmunity();
         this._attacksPerTurn = 2;
+        this._immunityRevealed = false;
+        this._lastImmunity = null; // Для отображения смены
     }
 
     get zones() {
@@ -236,8 +236,29 @@ class Enemy extends Person {
         return shuffled.slice(0, 1);
     }
 
+    refreshImmunity() {
+        this._lastImmunity = [...this._immunity];
+        this._immunity = this.generateImmunity();
+        this._immunityRevealed = true; // ПОКАЗЫВАЕМ после смены
+        console.log(`🔄 Иммунитет изменён: ${this._lastImmunity} → ${this._immunity}`);
+        return this._immunity;
+    }
+
     getImmunity() {
         return this._immunity;
+    }
+
+    revealImmunity() {
+        this._immunityRevealed = true;
+        return this._immunity;
+    }
+
+    isImmunityRevealed() {
+        return this._immunityRevealed;
+    }
+
+    getLastImmunity() {
+        return this._lastImmunity;
     }
 
     getAttacksPerTurn() {
@@ -250,7 +271,9 @@ class Enemy extends Person {
             hp: this.hp,
             maxHp: this.maxHp,
             zones: this._zones,
-            immunity: this._immunity
+            immunity: this._immunity,
+            immunityRevealed: this._immunityRevealed,
+            lastImmunity: this._lastImmunity
         };
     }
 
@@ -260,6 +283,8 @@ class Enemy extends Person {
         this.maxHp = data.maxHp;
         this._zones = data.zones;
         this._immunity = data.immunity || this.generateImmunity();
+        this._immunityRevealed = data.immunityRevealed || false;
+        this._lastImmunity = data.lastImmunity || null;
     }
 
     set head(v) { this._zones.head = v; }
@@ -517,6 +542,9 @@ function createGameHTML() {
             <div class="hp">❤️ ${newUser.hp}/${newUser.maxHp}</div>
             <div class="defense">🛡️ ${newUser.getDefense().join(', ') || 'нет'}</div>
             <div class="equip-info">📦 ${newUser.getEquippedCount()}/${newUser.getMaxEquip()}</div>
+            <div class="attack-status" style="color: ${newUser.canAttack() ? '#55efc4' : '#ff6b6b'}; font-weight:bold; font-size:13px;">
+                ${newUser.canAttack() ? '⚔️ ГОТОВ К АТАКЕ!' : `⚠️ Нужно 2 вещи (сейчас ${newUser.getEquippedCount()})`}
+            </div>
             <div class="player-name" style="color:#6c5ce7; font-weight:bold; font-size:14px;">👤 ${newUser.name}</div>
         </div>
         <div 
@@ -537,7 +565,9 @@ function createGameHTML() {
     <div class="container_player" id="enemyContainer">
         <div class="skill" id="enemySkill">
             <div class="hp">❤️ ${newEnemy.hp}/${newEnemy.maxHp}</div>
-            <div class="immunity">🛡️ Иммунитет: ${newEnemy.getImmunity().join(', ')}</div>
+            <div class="immunity" style="color: #fdcb6e; font-weight:bold;">
+                🛡️ Иммунитет: ${newEnemy.getImmunity().join(', ')}
+            </div>
             <div class="attack-info">⚔️ Атак за ход: ${newEnemy.getAttacksPerTurn()}</div>
         </div>
         <div 
@@ -562,7 +592,6 @@ function updateUI() {
     if (playerSkill) {
         const defense = newUser.getDefense();
         const equipped = newUser.getEquippedCount();
-        const needToAttack = 2;
         const canAttack = newUser.canAttack();
         
         playerSkill.innerHTML = `
@@ -570,7 +599,7 @@ function updateUI() {
             <div class="defense">🛡️ ${defense.length ? defense.join(', ') : 'нет'}</div>
             <div class="equip-info">📦 ${equipped}/${newUser.getMaxEquip()}</div>
             <div class="attack-status" style="color: ${canAttack ? '#55efc4' : '#ff6b6b'}; font-weight:bold; font-size:13px;">
-                ${canAttack ? '⚔️ ГОТОВ К АТАКЕ!' : `⚠️ Нужно ${needToAttack} вещи (сейчас ${equipped})`}
+                ${canAttack ? '⚔️ ГОТОВ К АТАКЕ!' : `⚠️ Нужно 2 вещи (сейчас ${equipped})`}
             </div>
             <div class="player-name" style="color:#6c5ce7; font-weight:bold; font-size:14px;">👤 ${newUser.name}</div>
         `;
@@ -580,7 +609,9 @@ function updateUI() {
     if (enemySkill) {
         enemySkill.innerHTML = `
             <div class="hp">❤️ ${newEnemy.hp}/${newEnemy.maxHp}</div>
-            <div class="immunity">🛡️ Иммунитет: ${newEnemy.getImmunity().join(', ')}</div>
+            <div class="immunity" style="color: #fdcb6e; font-weight:bold;">
+                🛡️ Иммунитет: ${newEnemy.getImmunity().join(', ')}
+            </div>
             <div class="attack-info">⚔️ Атак за ход: ${newEnemy.getAttacksPerTurn()}</div>
         `;
     }
@@ -684,7 +715,6 @@ function playerAttack(zoneName) {
         return;
     }
     
-    // ===== НОВОЕ: проверка может ли атаковать =====
     if (!newUser.canAttack()) {
         const reason = newUser.getAttackBlockReason();
         if (reason) {
@@ -697,13 +727,18 @@ function playerAttack(zoneName) {
 
     console.log(`⚔️ Атака по зоне: ${zoneName}`);
     
+    // ===== ПОКАЗЫВАЕМ ТЕКУЩИЙ ИММУНИТЕТ =====
     const immunity = newEnemy.getImmunity();
+    console.log(`🛡️ Текущий иммунитет: ${immunity.join(', ')}`);
+    
     let damage = 0;
     let isCritical = false;
+    let isImmune = false;
     
     if (immunity.includes(zoneName)) {
+        isImmune = true;
         damage = Math.floor(Math.random() * 8) + 3;
-        showMessage(`🛡️ Иммунитет! Урон: ${damage}`, '#a29bfe');
+        showMessage(`🛡️ ИММУНИТЕТ! Зона: ${zoneName} | Урон: ${damage}`, '#a29bfe');
     } else {
         const baseDamage = Math.floor(Math.random() * 15) + 20;
         
@@ -723,13 +758,23 @@ function playerAttack(zoneName) {
         }
         
         const msg = isCritical ? '⭐ КРИТИЧЕСКИЙ УДАР! ' : '💥 Попадание! ';
-        showMessage(`${msg}Урон: ${damage} ${isCritical ? '🔥' : ''}`, isCritical ? '#fdcb6e' : '#55efc4');
+        showMessage(`${msg}Зона: ${zoneName} | Урон: ${damage} ${isCritical ? '🔥' : ''}`, isCritical ? '#fdcb6e' : '#55efc4');
     }
     
     newUser.useAttack();
-    
     newEnemy.takeDamage(damage);
     animateHit('#enemy', damage > 30 ? 1.5 : 1);
+    
+    // ===== ПОСЛЕ АТАКИ МЕНЯЕМ ИММУНИТЕТ =====
+    const oldImmunity = [...newEnemy.getImmunity()];
+    newEnemy.refreshImmunity();
+    const newImmunity = newEnemy.getImmunity();
+    
+    // Показываем изменение иммунитета в логе
+    showMessage(`🔄 Иммунитет изменён: ${oldImmunity.join(', ')} → ${newImmunity.join(', ')}`, '#fdcb6e', false);
+    console.log(`🔄 Иммунитет изменён: ${oldImmunity} → ${newImmunity}`);
+    
+    updateUI();
     
     if (!newEnemy.isAlive()) {
         newEnemy.hp = 0;
@@ -741,7 +786,6 @@ function playerAttack(zoneName) {
     }
     
     isEnemyTurn = true;
-    showMessage('🔄 Ход врага...', '#888');
     setTimeout(() => {
         enemyAttackSequence();
     }, 600);
@@ -761,7 +805,7 @@ function enemyAttackSequence() {
             isEnemyTurn = false;
             newUser.resetAttacks();
             if (isBattleActive) {
-                showMessage(`⚔️ ${newUser.name}, твой ход! Атакуй!`, '#55efc4');
+                showMessage(`⚔️ ${newUser.name}, твой ход! Атакуй! (иммунитет: ${newEnemy.getImmunity().join(', ')})`, '#55efc4');
             }
             updateUI();
             saveGame();
@@ -820,7 +864,7 @@ function enemyAttackSequence() {
             isEnemyTurn = false;
             newUser.resetAttacks();
             if (isBattleActive) {
-                showMessage(`⚔️ ${newUser.name}, твой ход! Атакуй!`, '#55efc4');
+                showMessage(`⚔️ ${newUser.name}, твой ход! Атакуй! (иммунитет: ${newEnemy.getImmunity().join(', ')})`, '#55efc4');
             }
             updateUI();
             saveGame();
@@ -915,7 +959,7 @@ function handleClickEnemy(event) {
         return;
     }
     
-    // ===== НОВОЕ: проверка перед атакой =====
+    // Проверка, может ли игрок атаковать
     if (!newUser.canAttack()) {
         const reason = newUser.getAttackBlockReason();
         showMessage(reason || '⏳ Вы не можете атаковать!', '#ff6b6b');
@@ -948,16 +992,22 @@ function resetBattle() {
     newUser.resetAttacks();
     newUser._equippedCount = 0;
     Object.keys(newUser._equipment).forEach(k => newUser._equipment[k] = false);
+    
     newEnemy.hp = newEnemy.maxHp;
     newEnemy._immunity = newEnemy.generateImmunity();
+    newEnemy._immunityRevealed = true; // Показываем иммунитет сразу
+    
     isBattleActive = true;
     isEnemyTurn = false;
+    
     Object.keys(newEnemy._zones).forEach(key => {
         newEnemy._zones[key] = false;
     });
+    
     updateUI();
-    showMessage(`🔄 Новая битва! ${newUser.name}, надень 2 вещи и атакуй!`, '#55efc4', 3000);
+    showMessage(`🔄 Новая битва! ${newUser.name}, надень 2 вещи и атакуй! (иммунитет: ${newEnemy.getImmunity().join(', ')})`, '#55efc4', 3000);
     console.log('🔄 Битва сброшена!');
+    console.log(`🛡️ Иммунитет вампира: ${newEnemy.getImmunity().join(', ')}`);
     saveGame();
 }
 
@@ -1009,6 +1059,9 @@ async function initGame() {
         isBattleActive = true;
         isEnemyTurn = false;
         console.log('🆕 Создана новая игра');
+        console.log(`🛡️ Иммунитет вампира: ${newEnemy.getImmunity().join(', ')}`);
+    } else {
+        console.log(`🛡️ Загруженный иммунитет вампира: ${newEnemy.getImmunity().join(', ')}`);
     }
     
     createGameHTML();
@@ -1018,9 +1071,9 @@ async function initGame() {
     if (isBattleActive) {
         const equipped = newUser.getEquippedCount();
         if (equipped < 2) {
-            showMessage(`⚔️ ${newUser.name}, надень 2 вещи на персонажа, чтобы атаковать!`, '#fdcb6e', 4000);
+            showMessage(`⚔️ ${newUser.name}, надень 2 вещи на персонажа, чтобы атаковать! (иммунитет: ${newEnemy.getImmunity().join(', ')})`, '#fdcb6e', 4000);
         } else {
-            showMessage(`⚔️ ${newUser.name}, кликни по врагу, чтобы атаковать!`, '#aab');
+            showMessage(`⚔️ ${newUser.name}, кликни по врагу, чтобы атаковать! (иммунитет: ${newEnemy.getImmunity().join(', ')})`, '#aab');
         }
     } else if (!newUser.isAlive()) {
         showMessage(`💀 ${newUser.name} ПОВЕРЖЕН! Нажми "Новая битва"`, '#ff6b6b', true);
@@ -1045,7 +1098,8 @@ async function initGame() {
     
     console.log('🎮 Игра загружена!');
     console.log(`👤 Игрок: ${newUser.name} (HP: ${newUser.hp}, экипировка: ${newUser.getEquippedCount()}/${newUser.getMaxEquip()})`);
-    console.log(`🧛 Враг: ${newEnemy.name} (HP: ${newEnemy.hp}, иммунитет: ${newEnemy.getImmunity().join(', ')}, атак за ход: ${newEnemy.getAttacksPerTurn()})`);
+    console.log(`🧛 Враг: ${newEnemy.name} (HP: ${newEnemy.hp}, атак за ход: ${newEnemy.getAttacksPerTurn()})`);
+    console.log(`🛡️ Иммунитет вампира: ${newEnemy.getImmunity().join(', ')}`);
     console.log(`⚔️ Статус атаки: ${newUser.canAttack() ? 'ГОТОВ' : 'НУЖНО 2 ВЕЩИ'}`);
 }
 
